@@ -128,19 +128,20 @@ docker compose exec api python ml/train_offline.py
 
 ## Results (Honest)
 
-The metrics below are taken directly from [`ml/models/metrics.json`](ml/models/metrics.json) and [`ml/models/backtest.json`](ml/models/backtest.json), evaluated across 5 purged walk-forward folds spanning ~8 months of hourly data. Strategy and Buy-and-Hold returns are computed as $(\text{multiple} - 1) \times 100$:
+The metrics below are taken directly from [`ml/models/metrics.json`](ml/models/metrics.json) and [`ml/models/backtest.json`](ml/models/backtest.json), evaluated across 5 purged walk-forward folds. Strategy and Buy-and-Hold returns are computed from backtest equity multiples as $(\text{multiple} - 1) \times 100$:
 
-| Asset | Served Model | Model MCC (95% CI) | Best Baseline MCC (95% CI) | Strategy Return | Buy-and-Hold Return | Sharpe | Max Drawdown (Strategy vs B&H) | Trades |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **BITCOIN** | RandomForest | **0.1067** [0.0801, 0.1317] | 0.0692 [0.0500, 0.0874] *(Momentum)* | **-34.83%** *(0.6517x)* | **-19.26%** *(0.8074x)* | **-1.61** | -39.58% vs -53.72% | 544 |
-| **ETHEREUM** | RandomForest | **0.0732** [0.0454, 0.1001] | 0.0517 [0.0328, 0.0697] *(Momentum)* | **-65.40%** *(0.3460x)* | **-14.57%** *(0.8543x)* | **-2.03** | -73.85% vs -69.16% | 587 |
-| **IBM** | RandomForest | **0.0419** [0.0094, 0.0743] | **0.0610** [0.0256, 0.0992] *(Majority)* | **-39.92%** *(0.6008x)* | **+35.60%** *(1.3560x)* | **-1.70** | -45.20% vs -37.89% | 605 |
+| Asset | Served Model | Model MCC (95% CI) | Best Baseline MCC (95% CI) | Strategy Return | Buy-and-Hold Return | Best Baseline Return | Sharpe | Max Drawdown (Strategy vs B&H) | Trades |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **BITCOIN** | RandomForest | **0.1067** [0.0801, 0.1317] | 0.0692 [0.0500, 0.0874] *(Momentum)* | -34.83% *(0.6517x)* | -19.26% *(0.8074x)* | **-6.48%** *(0.9352x, Mom)* | -1.61 | -39.58% vs -53.72% | 544 |
+| **ETHEREUM** | RandomForest | **0.0732** [0.0454, 0.1001] | 0.0517 [0.0328, 0.0697] *(Momentum)* | -65.40% *(0.3460x)* | **-14.57%** *(0.8543x)* | -46.11% *(0.5389x, Mom)* | -2.03 | -73.85% vs -69.16% | 587 |
+| **IBM** | RandomForest | 0.0419 [0.0094, 0.0743] | **0.0610** [0.0256, 0.0992] *(Majority)* | -39.92% *(0.6008x)* | **+35.60%** *(1.3560x)* | +2.66% *(1.0266x, Maj)* | -1.70 | -45.20% vs -37.89% | 605 |
 
 ### Key Findings
-1. **Statistically Significant Edge on Bitcoin:** The Bitcoin model exhibits a small, statistically valid classification edge over random chance and baselines ($MCC = 0.1067$, with the 95% bootstrap confidence interval $[0.0801, 0.1317]$ strictly above baseline momentum $0.0692$).
-2. **Inconclusive on Ethereum:** While Ethereum achieves an MCC of $0.0732$, the confidence interval $[0.0454, 0.1001]$ overlaps with baseline variation ($0.0517$ $[0.0328, 0.0697]$), indicating marginal predictive power.
-3. **No Proven Edge on IBM:** The served model ($MCC = 0.0419$) is outperformed by a trivial majority-class baseline ($MCC = 0.0610$).
-4. **Fees Erode Capital Across All Active Strategies:** Returns are recomputed directly from backtest multiples as $(\text{multiple} - 1) \times 100\%$. With a 0.10% round-trip transaction fee, frequent trading over 500+ trades eroded capital, resulting in net negative returns across all three active models (-34.83% for Bitcoin, -65.40% for Ethereum, and -39.92% for IBM). While the active strategy reduced peak-to-trough drawdown on Bitcoin (-39.58% vs -53.72%), passive buy-and-hold outperformed the active strategy across all assets.
+1. **Statistically Significant Edge on Bitcoin:** The Bitcoin model achieves $MCC = 0.1067$, with the 95% bootstrap confidence interval $[0.0801, 0.1317]$ strictly higher than the momentum baseline ($MCC = 0.0692$).
+2. **Inconclusive on Ethereum:** While Ethereum achieves an MCC of $0.0732$, its confidence interval $[0.0454, 0.1001]$ overlaps with baseline momentum variation ($0.0517$ $[0.0328, 0.0697]$), indicating marginal predictive power.
+3. **No Proven Edge on IBM:** The served model ($MCC = 0.0419$) is outperformed by the simple majority-class baseline ($MCC = 0.0610$).
+4. **Every Active Strategy Lost Money After Fees:** When accounting for realistic transaction friction (0.10% round-trip fee), every active ML model lost money (-34.83% on Bitcoin, -65.40% on Ethereum, and -39.92% on IBM) with negative Sharpe ratios across the board (-1.61, -2.03, and -1.70). High trade counts (544–605 trades) resulted in fees eroding capital.
+5. **Asset Performance Context:** Over this ~8-month backtest period, buy-and-hold also lost money on Bitcoin (-19.26%) and Ethereum (-14.57%). Only IBM buy-and-hold was profitable (+35.60%). While active trading reduced maximum drawdown on Bitcoin (-39.58% vs -53.72%), passive buy-and-hold outperformed the active ML strategy across all three assets.
 
 ---
 
@@ -162,12 +163,13 @@ Every evaluation claim matches the pipeline implementation in [`ml/train_offline
 
 ## Limitations
 
-1. **Short Historical Sample:** Ingestion and training cover approximately 8 months of hourly data (~5,000 candles).
-2. **Price-Only Features:** Features are derived solely from OHLCV candles (returns, rolling volatility, RSI, MACD, price-to-moving-average ratios). Order book depth, sentiment, funding rates, and macroeconomic indicators are not included.
+1. **Sample History:** Ingestion and walk-forward evaluation cover ~4,200 to 4,700 hourly test candles per asset (~6.5 months of 24/7 crypto data, ~26 months of US equity trading hours).
+2. **Price-Only Features:** Features are derived solely from OHLCV candles across 14 technical indicators: multi-period returns (1h, 3h, 5h, 10h), lagged returns (t-1, t-2, t-3, t-5), rolling volatility (10h), RSI (14h), MACD histogram, price relative to moving averages (MA5, MA10, MA20), and log volume change. Order book depth, funding rates, sentiment, and macro indicators are not included.
 3. **Model Selection Overlap:** The served model was selected on the same walk-forward validation splits it was evaluated on.
 4. **Single Asset Edge:** Only Bitcoin demonstrates a statistically defensible classification edge over baselines.
 5. **Live Sample Size:** Live outcome tracking metrics require multiple weeks of live operation before statistical significance can be established.
-6. **Not Financial Advice:** This software is an engineering demonstration of predictive ML pipelines and is not intended for live capital allocation.
+6. **Confidence Values Interpretation:** Confidence values are model probabilities, not measured hit rates; see the live performance section for observed accuracy.
+7. **Not Financial Advice:** This software is an engineering demonstration of predictive ML pipelines and is not intended for live capital allocation.
 
 ---
 
