@@ -1,0 +1,10 @@
+{
+  "best_model": "RandomForest",
+  "selection_metric": "highest_mcc",
+  "mcc": 0.1067,
+  "interval": "1h",
+  "horizon": 5,
+  "up_thresh": 0.005,
+  "dn_thresh": 0.005,
+  "signal_threshold": 0.4
+}

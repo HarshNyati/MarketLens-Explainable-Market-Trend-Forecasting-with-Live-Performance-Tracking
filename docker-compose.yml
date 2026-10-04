@@ -1,0 +1,86 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Market Trend Predictions  –  Docker Compose
+#
+# Services:
+#   postgres   – PostgreSQL 15 database
+#   api        – FastAPI / Uvicorn backend
+#   dashboard  – Streamlit frontend
+#
+# Quick start:
+#   1. cp .env.example .env          (then fill in your API keys)
+#   2. docker compose up --build -d
+#   3. docker compose exec api python scripts/init_db.py   (first run only)
+# ──────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: market_postgres
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Auto-apply schema on first start (only runs when the volume is empty)
+      - ./schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI backend ──────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      target: api
+    container_name: market_api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: postgres   # override to point at the compose service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount ml/ so the scheduler can load and save trained models & metrics
+      - ./ml:/app/ml
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Streamlit dashboard ──────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: .
+      target: dashboard
+    container_name: market_dashboard
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: postgres   # override to point at the compose service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./ml:/app/ml
+      - ./dashboard:/app/dashboard
+
+
+volumes:
+  postgres_data:

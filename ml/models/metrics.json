@@ -1,0 +1,677 @@
+{
+  "BITCOIN": {
+    "RandomForest": {
+      "balanced_accuracy": 0.4071,
+      "balanced_accuracy_ci": [
+        0.3903,
+        0.4235
+      ],
+      "mcc": 0.1067,
+      "mcc_ci": [
+        0.0801,
+        0.1317
+      ],
+      "macro_f1": 0.3858,
+      "accuracy": 0.3921,
+      "confusion_matrix": [
+        [
+          563,
+          700,
+          378
+        ],
+        [
+          313,
+          833,
+          207
+        ],
+        [
+          563,
+          699,
+          449
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.5921
+    },
+    "XGBoost": {
+      "balanced_accuracy": 0.3694,
+      "balanced_accuracy_ci": [
+        0.3527,
+        0.3844
+      ],
+      "mcc": 0.0514,
+      "mcc_ci": [
+        0.0258,
+        0.0739
+      ],
+      "macro_f1": 0.3691,
+      "accuracy": 0.377,
+      "confusion_matrix": [
+        [
+          616,
+          272,
+          753
+        ],
+        [
+          397,
+          362,
+          594
+        ],
+        [
+          644,
+          271,
+          796
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.674
+    },
+    "LightGBM": {
+      "balanced_accuracy": 0.387,
+      "balanced_accuracy_ci": [
+        0.3702,
+        0.4026
+      ],
+      "mcc": 0.0748,
+      "mcc_ci": [
+        0.0511,
+        0.0969
+      ],
+      "macro_f1": 0.3836,
+      "accuracy": 0.3828,
+      "confusion_matrix": [
+        [
+          572,
+          493,
+          576
+        ],
+        [
+          357,
+          608,
+          388
+        ],
+        [
+          597,
+          493,
+          621
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.6321
+    },
+    "baseline_always_up": {
+      "balanced_accuracy": 0.3333,
+      "balanced_accuracy_ci": [
+        0.3333,
+        0.3333
+      ],
+      "mcc": 0.0,
+      "mcc_ci": [
+        0.0,
+        0.0
+      ],
+      "macro_f1": 0.1778,
+      "accuracy": 0.3637,
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          1641
+        ],
+        [
+          0,
+          0,
+          1353
+        ],
+        [
+          0,
+          0,
+          1711
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.7124
+    },
+    "baseline_majority": {
+      "balanced_accuracy": 0.3333,
+      "balanced_accuracy_ci": [
+        0.3333,
+        0.3333
+      ],
+      "mcc": 0.0,
+      "mcc_ci": [
+        0.0,
+        0.0
+      ],
+      "macro_f1": 0.1778,
+      "accuracy": 0.3637,
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          1641
+        ],
+        [
+          0,
+          0,
+          1353
+        ],
+        [
+          0,
+          0,
+          1711
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.7124
+    },
+    "baseline_momentum": {
+      "balanced_accuracy": 0.3728,
+      "balanced_accuracy_ci": [
+        0.3624,
+        0.3829
+      ],
+      "mcc": 0.0692,
+      "mcc_ci": [
+        0.05,
+        0.0874
+      ],
+      "macro_f1": 0.2905,
+      "accuracy": 0.3405,
+      "confusion_matrix": [
+        [
+          199,
+          1194,
+          248
+        ],
+        [
+          96,
+          1145,
+          112
+        ],
+        [
+          252,
+          1201,
+          258
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.4468
+    },
+    "_served_model": "RandomForest"
+  },
+  "ETHEREUM": {
+    "RandomForest": {
+      "balanced_accuracy": 0.4073,
+      "balanced_accuracy_ci": [
+        0.3864,
+        0.4275
+      ],
+      "mcc": 0.0732,
+      "mcc_ci": [
+        0.0454,
+        0.1001
+      ],
+      "macro_f1": 0.3718,
+      "accuracy": 0.3787,
+      "confusion_matrix": [
+        [
+          646,
+          566,
+          624
+        ],
+        [
+          188,
+          351,
+          145
+        ],
+        [
+          656,
+          598,
+          696
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.6651
+    },
+    "XGBoost": {
+      "balanced_accuracy": 0.3479,
+      "balanced_accuracy_ci": [
+        0.3353,
+        0.3629
+      ],
+      "mcc": 0.0171,
+      "mcc_ci": [
+        -0.0086,
+        0.0456
+      ],
+      "macro_f1": 0.3387,
+      "accuracy": 0.4271,
+      "confusion_matrix": [
+        [
+          782,
+          38,
+          1016
+        ],
+        [
+          269,
+          42,
+          373
+        ],
+        [
+          816,
+          49,
+          1085
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.8369
+    },
+    "LightGBM": {
+      "balanced_accuracy": 0.3961,
+      "balanced_accuracy_ci": [
+        0.3783,
+        0.4145
+      ],
+      "mcc": 0.0643,
+      "mcc_ci": [
+        0.0373,
+        0.0915
+      ],
+      "macro_f1": 0.391,
+      "accuracy": 0.4136,
+      "confusion_matrix": [
+        [
+          769,
+          288,
+          779
+        ],
+        [
+          247,
+          227,
+          210
+        ],
+        [
+          782,
+          315,
+          853
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.7629
+    },
+    "baseline_always_up": {
+      "balanced_accuracy": 0.3333,
+      "balanced_accuracy_ci": [
+        0.3333,
+        0.3333
+      ],
+      "mcc": 0.0,
+      "mcc_ci": [
+        0.0,
+        0.0
+      ],
+      "macro_f1": 0.2025,
+      "accuracy": 0.4362,
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          1836
+        ],
+        [
+          0,
+          0,
+          684
+        ],
+        [
+          0,
+          0,
+          1950
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.847
+    },
+    "baseline_majority": {
+      "balanced_accuracy": 0.3333,
+      "balanced_accuracy_ci": [
+        0.3333,
+        0.3333
+      ],
+      "mcc": 0.0,
+      "mcc_ci": [
+        0.0,
+        0.0
+      ],
+      "macro_f1": 0.2025,
+      "accuracy": 0.4362,
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          1836
+        ],
+        [
+          0,
+          0,
+          684
+        ],
+        [
+          0,
+          0,
+          1950
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.847
+    },
+    "baseline_momentum": {
+      "balanced_accuracy": 0.3865,
+      "balanced_accuracy_ci": [
+        0.3738,
+        0.3992
+      ],
+      "mcc": 0.0517,
+      "mcc_ci": [
+        0.0328,
+        0.0697
+      ],
+      "macro_f1": 0.2795,
+      "accuracy": 0.2819,
+      "confusion_matrix": [
+        [
+          326,
+          1123,
+          387
+        ],
+        [
+          71,
+          530,
+          83
+        ],
+        [
+          364,
+          1182,
+          404
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.4499
+    },
+    "_served_model": "RandomForest"
+  },
+  "IBM": {
+    "RandomForest": {
+      "balanced_accuracy": 0.3747,
+      "balanced_accuracy_ci": [
+        0.3521,
+        0.3958
+      ],
+      "mcc": 0.0419,
+      "mcc_ci": [
+        0.0094,
+        0.0743
+      ],
+      "macro_f1": 0.3631,
+      "accuracy": 0.385,
+      "confusion_matrix": [
+        [
+          791,
+          336,
+          527
+        ],
+        [
+          239,
+          214,
+          217
+        ],
+        [
+          880,
+          387,
+          614
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.7196
+    },
+    "XGBoost": {
+      "balanced_accuracy": 0.3647,
+      "balanced_accuracy_ci": [
+        0.3471,
+        0.3837
+      ],
+      "mcc": 0.033,
+      "mcc_ci": [
+        0.0039,
+        0.0651
+      ],
+      "macro_f1": 0.3662,
+      "accuracy": 0.4076,
+      "confusion_matrix": [
+        [
+          664,
+          205,
+          785
+        ],
+        [
+          206,
+          140,
+          324
+        ],
+        [
+          744,
+          227,
+          910
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.7712
+    },
+    "LightGBM": {
+      "balanced_accuracy": 0.3656,
+      "balanced_accuracy_ci": [
+        0.3466,
+        0.3845
+      ],
+      "mcc": 0.0326,
+      "mcc_ci": [
+        0.0035,
+        0.0622
+      ],
+      "macro_f1": 0.3618,
+      "accuracy": 0.3893,
+      "confusion_matrix": [
+        [
+          680,
+          295,
+          679
+        ],
+        [
+          226,
+          184,
+          260
+        ],
+        [
+          751,
+          357,
+          773
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.7294
+    },
+    "baseline_always_up": {
+      "balanced_accuracy": 0.3333,
+      "balanced_accuracy_ci": [
+        0.3333,
+        0.3333
+      ],
+      "mcc": 0.0,
+      "mcc_ci": [
+        0.0,
+        0.0
+      ],
+      "macro_f1": 0.206,
+      "accuracy": 0.4473,
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          1654
+        ],
+        [
+          0,
+          0,
+          670
+        ],
+        [
+          0,
+          0,
+          1881
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.8407
+    },
+    "baseline_majority": {
+      "balanced_accuracy": 0.385,
+      "balanced_accuracy_ci": [
+        0.3637,
+        0.4089
+      ],
+      "mcc": 0.061,
+      "mcc_ci": [
+        0.0256,
+        0.0992
+      ],
+      "macro_f1": 0.2957,
+      "accuracy": 0.4169,
+      "confusion_matrix": [
+        [
+          0,
+          249,
+          1405
+        ],
+        [
+          0,
+          232,
+          438
+        ],
+        [
+          0,
+          360,
+          1521
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.751
+    },
+    "baseline_momentum": {
+      "balanced_accuracy": 0.3507,
+      "balanced_accuracy_ci": [
+        0.3361,
+        0.364
+      ],
+      "mcc": 0.0228,
+      "mcc_ci": [
+        0.0023,
+        0.0439
+      ],
+      "macro_f1": 0.234,
+      "accuracy": 0.2407,
+      "confusion_matrix": [
+        [
+          249,
+          1176,
+          229
+        ],
+        [
+          72,
+          516,
+          82
+        ],
+        [
+          243,
+          1391,
+          247
+        ]
+      ],
+      "confusion_labels": [
+        "DOWN",
+        "NEUTRAL",
+        "UP"
+      ],
+      "move_vs_nomove_accuracy": 0.3529
+    },
+    "_served_model": "RandomForest"
+  }
+}

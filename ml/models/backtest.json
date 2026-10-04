@@ -1,0 +1,134 @@
+{
+  "BITCOIN": {
+    "RandomForest": {
+      "strategy_return": 0.6517,
+      "buyhold_return": 0.8074,
+      "n_trades": 544,
+      "max_drawdown": -0.3958,
+      "sharpe_ratio": -1.61
+    },
+    "XGBoost": {
+      "strategy_return": 0.395,
+      "buyhold_return": 0.8074,
+      "n_trades": 998,
+      "max_drawdown": -0.6294,
+      "sharpe_ratio": -2.77
+    },
+    "LightGBM": {
+      "strategy_return": 0.5154,
+      "buyhold_return": 0.8074,
+      "n_trades": 882,
+      "max_drawdown": -0.5082,
+      "sharpe_ratio": -2.15
+    },
+    "baseline_always_up": {
+      "strategy_return": 0.8069,
+      "buyhold_return": 0.8074,
+      "n_trades": 1,
+      "max_drawdown": -0.5372,
+      "sharpe_ratio": -0.11
+    },
+    "baseline_majority": {
+      "strategy_return": 0.8069,
+      "buyhold_return": 0.8074,
+      "n_trades": 1,
+      "max_drawdown": -0.5372,
+      "sharpe_ratio": -0.11
+    },
+    "baseline_momentum": {
+      "strategy_return": 0.9352,
+      "buyhold_return": 0.8074,
+      "n_trades": 495,
+      "max_drawdown": -0.3267,
+      "sharpe_ratio": -0.17
+    }
+  },
+  "ETHEREUM": {
+    "RandomForest": {
+      "strategy_return": 0.346,
+      "buyhold_return": 0.8543,
+      "n_trades": 587,
+      "max_drawdown": -0.7385,
+      "sharpe_ratio": -2.03
+    },
+    "XGBoost": {
+      "strategy_return": 0.3477,
+      "buyhold_return": 0.8543,
+      "n_trades": 912,
+      "max_drawdown": -0.7036,
+      "sharpe_ratio": -1.64
+    },
+    "LightGBM": {
+      "strategy_return": 0.3244,
+      "buyhold_return": 0.8543,
+      "n_trades": 869,
+      "max_drawdown": -0.7076,
+      "sharpe_ratio": -2.04
+    },
+    "baseline_always_up": {
+      "strategy_return": 0.8538,
+      "buyhold_return": 0.8543,
+      "n_trades": 1,
+      "max_drawdown": -0.6916,
+      "sharpe_ratio": 0.38
+    },
+    "baseline_majority": {
+      "strategy_return": 0.8538,
+      "buyhold_return": 0.8543,
+      "n_trades": 1,
+      "max_drawdown": -0.6916,
+      "sharpe_ratio": 0.38
+    },
+    "baseline_momentum": {
+      "strategy_return": 0.5389,
+      "buyhold_return": 0.8543,
+      "n_trades": 687,
+      "max_drawdown": -0.5192,
+      "sharpe_ratio": -1.87
+    }
+  },
+  "IBM": {
+    "RandomForest": {
+      "strategy_return": 0.6008,
+      "buyhold_return": 1.356,
+      "n_trades": 605,
+      "max_drawdown": -0.452,
+      "sharpe_ratio": -1.7
+    },
+    "XGBoost": {
+      "strategy_return": 0.5609,
+      "buyhold_return": 1.356,
+      "n_trades": 726,
+      "max_drawdown": -0.4831,
+      "sharpe_ratio": -1.47
+    },
+    "LightGBM": {
+      "strategy_return": 0.5552,
+      "buyhold_return": 1.356,
+      "n_trades": 711,
+      "max_drawdown": -0.5079,
+      "sharpe_ratio": -1.65
+    },
+    "baseline_always_up": {
+      "strategy_return": 1.3554,
+      "buyhold_return": 1.356,
+      "n_trades": 1,
+      "max_drawdown": -0.3789,
+      "sharpe_ratio": 1.2
+    },
+    "baseline_majority": {
+      "strategy_return": 1.0266,
+      "buyhold_return": 1.356,
+      "n_trades": 1,
+      "max_drawdown": -0.3789,
+      "sharpe_ratio": 0.48
+    },
+    "baseline_momentum": {
+      "strategy_return": 0.7709,
+      "buyhold_return": 1.356,
+      "n_trades": 460,
+      "max_drawdown": -0.3485,
+      "sharpe_ratio": -1.78
+    }
+  }
+}
