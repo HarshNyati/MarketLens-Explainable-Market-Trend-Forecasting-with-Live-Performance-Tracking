@@ -37,7 +37,7 @@ flowchart TD
 
     subgraph Ingestion & Storage
         ING["Candle Ingestion Service (APScheduler / candle_ingester.py)"]
-        PG[("PostgreSQL Database (market_data, prediction_results)")]
+        PG[("PostgreSQL Database")]
     end
 
     subgraph Machine Learning Pipeline
@@ -55,17 +55,17 @@ flowchart TD
         DASH["Streamlit Dashboard (dashboard/app.py)"]
     end
 
-    YF -->|Hourly OHLCV Candles| ING
-    ING -->|Store Candles (ON CONFLICT DO NOTHING)| PG
-    PG -->|Historical Candles| FE
+    YF -->|"Hourly OHLCV Candles"| ING
+    ING -->|"Store Candles - Deduplicated"| PG
+    PG -->|"Historical Candles"| FE
     FE --> TR
-    TR -->|Trained Models & Metrics| EXP
-    PG -->|Latest Closed Candle| EXP
+    TR -->|"Trained Models & Metrics"| EXP
+    PG -->|"Latest Closed Candle"| EXP
     EXP --> API
-    API -->|Live Signals & SHAP Explanations| DASH
-    PG -->|5h Elapsed Outcomes| OUT
-    OUT -->|Record Realized Returns & Accuracy| PG
-    PG -->|Historical & Live Performance| DASH
+    API -->|"Live Signals & SHAP Explanations"| DASH
+    PG -->|"5h Elapsed Outcomes"| OUT
+    OUT -->|"Record Realized Returns & Accuracy"| PG
+    PG -->|"Historical & Live Performance"| DASH
 ```
 
 ---
