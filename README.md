@@ -74,12 +74,12 @@ flowchart TD
 
 Derived directly from [`requirements.txt`](requirements.txt) and [`Dockerfile`](Dockerfile):
 
-* **Language & Runtime:** Python 3.11, Docker, Docker Compose
-* **Backend API & Scheduling:** FastAPI (>=0.111.0), Uvicorn (>=0.29.0), APScheduler (>=3.10.4), Pydantic
-* **Database & Storage:** PostgreSQL 15, psycopg2-binary (>=2.9.9)
-* **Machine Learning & Analytics:** scikit-learn (>=1.4.0), XGBoost (>=2.0.0), LightGBM (>=4.3.0), SHAP (>=0.45.0), joblib (>=1.3.2), NumPy (>=1.26.0), pandas (>=2.2.0)
-* **Interactive Frontend:** Streamlit (>=1.35.0), Matplotlib (>=3.8.0), Seaborn (>=0.13.0)
-* **Market Data & Testing:** yfinance (>=0.2.40), requests (>=2.31.0), pytest (>=8.0.0)
+* **Language & Runtime:** Python 3.11 (tested on Python 3.11.17 in container, compatible with Python 3.11+), Docker, Docker Compose
+* **Backend API & Scheduling:** FastAPI (==0.142.2), Uvicorn (==0.54.0), APScheduler (==3.11.3), Pydantic
+* **Database & Storage:** PostgreSQL 15, psycopg2-binary (==2.9.13)
+* **Machine Learning & Analytics:** scikit-learn (==1.9.1), XGBoost (==3.2.0), LightGBM (==4.7.0), SHAP (==0.51.0), joblib (==1.6.0), NumPy (==2.4.6), pandas (==3.0.6)
+* **Interactive Frontend:** Streamlit (==1.65.0), Matplotlib (==3.11.2), Seaborn (==0.13.2)
+* **Market Data & Testing:** yfinance (==1.7.0), requests (==2.34.2), pytest (==9.1.1)
 
 ---
 
@@ -128,29 +128,35 @@ docker compose exec api python ml/train_offline.py
 
 ## Results (Honest)
 
-The metrics below are taken directly from [`ml/models/metrics.json`](ml/models/metrics.json) and [`ml/models/backtest.json`](ml/models/backtest.json), evaluated across 5 purged walk-forward folds spanning ~8 months of hourly data:
+The metrics below are taken directly from [`ml/models/metrics.json`](ml/models/metrics.json) and [`ml/models/backtest.json`](ml/models/backtest.json), evaluated across 5 purged walk-forward folds spanning ~8 months of hourly data. Strategy and Buy-and-Hold returns are computed as $(\text{multiple} - 1) \times 100$:
 
-| Asset | Served Model | Model MCC (95% CI) | Best Baseline MCC (95% CI) | Strategy Return | Buy-and-Hold Return | Max Drawdown (Strategy vs B&H) | Trades |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **BITCOIN** | RandomForest | **0.1067** [0.0801, 0.1317] | 0.0692 [0.0500, 0.0874] *(Momentum)* | +65.17% | **+80.74%** | -39.58% vs -53.72% | 544 |
-| **ETHEREUM** | RandomForest | **0.0732** [0.0454, 0.1001] | 0.0517 [0.0328, 0.0697] *(Momentum)* | +34.60% | **+85.43%** | -73.85% vs -69.16% | 587 |
-| **IBM** | RandomForest | **0.0419** [0.0094, 0.0743] | **0.0610** [0.0256, 0.0992] *(Majority)* | +60.08% | **+135.60%** | -45.20% vs -37.89% | 605 |
+| Asset | Served Model | Model MCC (95% CI) | Best Baseline MCC (95% CI) | Strategy Return | Buy-and-Hold Return | Sharpe | Max Drawdown (Strategy vs B&H) | Trades |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **BITCOIN** | RandomForest | **0.1067** [0.0801, 0.1317] | 0.0692 [0.0500, 0.0874] *(Momentum)* | **-34.83%** *(0.6517x)* | **-19.26%** *(0.8074x)* | **-1.61** | -39.58% vs -53.72% | 544 |
+| **ETHEREUM** | RandomForest | **0.0732** [0.0454, 0.1001] | 0.0517 [0.0328, 0.0697] *(Momentum)* | **-65.40%** *(0.3460x)* | **-14.57%** *(0.8543x)* | **-2.03** | -73.85% vs -69.16% | 587 |
+| **IBM** | RandomForest | **0.0419** [0.0094, 0.0743] | **0.0610** [0.0256, 0.0992] *(Majority)* | **-39.92%** *(0.6008x)* | **+35.60%** *(1.3560x)* | **-1.70** | -45.20% vs -37.89% | 605 |
 
 ### Key Findings
-1. **Statistically Significant Edge on Bitcoin:** The Bitcoin model exhibits a small, statistically valid classification edge over random chance and baselines ($MCC = 0.1067$, with the 95% bootstrap confidence interval strictly above baseline momentum).
-2. **Inconclusive on Ethereum:** While Ethereum achieves an MCC of 0.0732, the confidence interval overlaps with baseline variation, indicating marginal predictive power.
+1. **Statistically Significant Edge on Bitcoin:** The Bitcoin model exhibits a small, statistically valid classification edge over random chance and baselines ($MCC = 0.1067$, with the 95% bootstrap confidence interval $[0.0801, 0.1317]$ strictly above baseline momentum $0.0692$).
+2. **Inconclusive on Ethereum:** While Ethereum achieves an MCC of $0.0732$, the confidence interval $[0.0454, 0.1001]$ overlaps with baseline variation ($0.0517$ $[0.0328, 0.0697]$), indicating marginal predictive power.
 3. **No Proven Edge on IBM:** The served model ($MCC = 0.0419$) is outperformed by a trivial majority-class baseline ($MCC = 0.0610$).
-4. **Fees Erode Alpha:** In fee-aware backtesting (5 bps transaction fee + 5 bps slippage), **none of the active trading strategies beat passive buy-and-hold**. While the strategy reduces maximum drawdown on Bitcoin (-39.6% vs -53.7%), frequent trading churn drags total net returns below buy-and-hold.
+4. **Fees Erode Capital Across All Active Strategies:** Returns are recomputed directly from backtest multiples as $(\text{multiple} - 1) \times 100\%$. With a 0.10% round-trip transaction fee, frequent trading over 500+ trades eroded capital, resulting in net negative returns across all three active models (-34.83% for Bitcoin, -65.40% for Ethereum, and -39.92% for IBM). While the active strategy reduced peak-to-trough drawdown on Bitcoin (-39.58% vs -53.72%), passive buy-and-hold outperformed the active strategy across all assets.
 
 ---
 
 ## How It Is Evaluated
 
-* **Purged Walk-Forward Validation:** Evaluated using 5 chronological expanding-window folds. An embargo buffer (`horizon = 5` bars) is purged between training and validation splits to prevent lookahead bias.
-* **Block-Bootstrap Confidence Intervals:** 95% empirical confidence intervals for MCC and Balanced Accuracy are computed using moving block bootstrap (block size = 24 bars) to preserve serial autocorrelation.
-* **Realistic Baselines:** Models are benchmarked against trivial baselines: `Always UP`, `Majority Class`, and a `10-hour Momentum Heuristic`.
-* **Fee-Aware Backtesting:** Simulates a long/flat/short execution policy applying realistic transaction friction (0.05% exchange fee + 0.05% slippage per turn).
-* **Live Outcome Tracking:** A background cron job periodically queries subsequent market prices once 5 hours elapse, recording true outcomes and tracking live prediction accuracy in PostgreSQL.
+Every evaluation claim matches the pipeline implementation in [`ml/train_offline.py`](ml/train_offline.py):
+
+* **Purged Walk-Forward Validation:** Evaluated using 5 chronological expanding-window folds (`TimeSeriesSplit(n_splits=5)`, lines 110, 343). A 5-bar embargo (`HORIZON = 5`, lines 103, 353) is purged from the end of each training split to prevent overlap with the forward look-ahead target.
+* **Moving-Block Bootstrap Confidence Intervals:** 95% empirical confidence intervals for MCC and Balanced Accuracy are calculated across 1,000 bootstrap iterations with a **10-bar block length** (`block_length = 2 * HORIZON = 10 bars`, lines 166, 187–191) to preserve serial autocorrelation.
+* **Realistic Baselines:**
+  - `Always UP`: Predicts class 2 (UP) on all bars (line 405).
+  - `Majority Class`: Predicts the training fold's historical majority class (lines 407–410).
+  - `Momentum Heuristic`: Evaluates the preceding 1-hour bar return (`ret_1`): predicts UP if `ret_1 > +0.5%`, DOWN if `ret_1 < -0.5%`, and NEUTRAL otherwise (lines 415–420).
+* **Long-Only Fee-Aware Backtest:** The backtest simulates a strictly **long-only** policy (`signal = (preds[:-1] == 2).astype(int)`, line 276), entering long when predicting UP and holding cash when predicting NEUTRAL or DOWN. Transaction costs apply a **0.10% (10 bps) round-trip fee** (`FEE_ROUNDTRIP = 0.001`, lines 111, 284–288), split into 0.05% upon entry and 0.05% upon exit.
+* **Isotonic Probability Calibration:** The highest-MCC model is calibrated on the full dataset using `CalibratedClassifierCV(estimator=..., method="isotonic", cv=5)` (lines 518–524). In production inference ([`app/services/ml_predictor.py#L164-L170`](app/services/ml_predictor.py)), `predict_proba()` produces these isotonic calibrated probabilities for directional classification and threshold gating (`SIGNAL_THRESHOLD = 0.40`).
+* **Live Outcome Tracking:** A background scheduler periodically queries subsequent market prices once 5 hours elapse, recording true outcomes and tracking live prediction accuracy in PostgreSQL ([`app/services/outcome_tracker.py#L32-L144`](app/services/outcome_tracker.py)).
 
 ---
 
@@ -170,9 +176,10 @@ The metrics below are taken directly from [`ml/models/metrics.json`](ml/models/m
 ```
 ├── Dockerfile                  # Multi-target build (FastAPI API and Streamlit Dashboard)
 ├── docker-compose.yml          # Container orchestration (postgres, api, dashboard)
-├── requirements.txt            # Python dependencies
+├── requirements.txt            # Python dependencies (pinned versions)
 ├── pytest.ini                  # Pytest configuration
 ├── schema.sql                  # PostgreSQL database DDL
+├── LICENSE                     # MIT License
 ├── .env.example                # Template for environment configuration
 │
 ├── app/
