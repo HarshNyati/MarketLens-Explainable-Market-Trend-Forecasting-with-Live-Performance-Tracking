@@ -1,7 +1,7 @@
 """
 ml/visualize.py
 ────────────────
-Visualise model performance on a tail of each historical CSV.
+Visualise model performance on a tail of fetched candles.
 Uses the same feature_engineering pipeline as training/inference.
 """
 
@@ -10,33 +10,27 @@ from __future__ import annotations
 import warnings
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 
 from ml.feature_engineering import FEATURE_COLS, create_features
+from ml.market_data_fetcher import fetch_candles
 
 warnings.filterwarnings("ignore")
 
-ASSETS = {
-    "BITCOIN":  "ml/datasets/btc_historical.csv",
-    "ETHEREUM": "ml/datasets/eth_historical.csv",
-    "IBM":      "ml/datasets/ibm_historical.csv",
-}
+ASSETS = ["BITCOIN", "ETHEREUM", "IBM"]
 
 
-def visualize_asset(symbol: str, csv_path: str) -> None:
+def visualize_asset(symbol: str) -> None:
     print(f"\n📊 Visualising {symbol}")
 
-    df = pd.read_csv(csv_path)
+    df = fetch_candles(symbol)
+    if df.empty:
+        print(f"  ⚠ No data fetched for {symbol}")
+        return
     df = df.tail(2000)
-
-    # Normalise column names
-    for src, dst in [("close", "Close"), ("Price", "Close"), ("Value", "Close")]:
-        if src in df.columns and "Close" not in df.columns:
-            df.rename(columns={src: dst}, inplace=True)
 
     df, _ = create_features(df)
 
@@ -93,5 +87,5 @@ def visualize_asset(symbol: str, csv_path: str) -> None:
 
 
 if __name__ == "__main__":
-    for sym, path in ASSETS.items():
-        visualize_asset(sym, path)
+    for sym in ASSETS:
+        visualize_asset(sym)

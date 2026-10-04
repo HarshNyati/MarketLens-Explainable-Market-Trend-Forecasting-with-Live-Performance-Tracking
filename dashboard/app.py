@@ -2,7 +2,6 @@
 # Fix project import path (IMPORTANT)
 # -------------------------------------------------
 import sys
-import os
 import json
 from pathlib import Path
 
@@ -37,7 +36,7 @@ MODELS_DIR = ROOT_DIR / "ml" / "models"
 # Page config
 # -------------------------------------------------
 st.set_page_config(
-    page_title="Market Trend AI Dashboard",
+    page_title="MarketLens AI Dashboard",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -365,12 +364,27 @@ with tab_live:
         cand_time_str = to_ist(latest.get("candle_timestamp"))
         eval_time_str = to_ist(last_action["evaluated_at"]) if last_action else to_ist(latest.get("predicted_at"))
 
+        # Check if IBM candle is from last market close (more than 4 hours old)
+        is_ibm_market_closed = False
+        cand_label = "LAST CLOSED CANDLE (IST)"
+        if symbol == "IBM" and latest.get("candle_timestamp") is not None:
+            try:
+                cand_dt = pd.to_datetime(latest["candle_timestamp"], utc=True)
+                now_utc = pd.Timestamp.now(tz="UTC")
+                if (now_utc - cand_dt).total_seconds() > 4 * 3600:
+                    is_ibm_market_closed = True
+                    cand_label = "LAST MARKET CLOSE (IST)"
+            except Exception:
+                pass
+
+        market_status_badge = '<span style="color: #d29922; font-size: 0.8rem; margin-left: 6px;">(Market Closed)</span>' if is_ibm_market_closed else ''
+
         st.markdown(
             f"""
             <div style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 18px; margin: 12px 0 20px 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px;">
                 <div>
-                    <span style="color: #8b949e; font-size: 0.8rem; font-weight: 500;">LAST CLOSED CANDLE (IST)</span><br>
-                    <span style="color: #f0f6fc; font-size: 0.95rem; font-weight: 600;">{cand_time_str}</span>
+                    <span style="color: #8b949e; font-size: 0.8rem; font-weight: 500;">{cand_label}</span><br>
+                    <span style="color: #f0f6fc; font-size: 0.95rem; font-weight: 600;">{cand_time_str}{market_status_badge}</span>
                 </div>
                 <div>
                     <span style="color: #8b949e; font-size: 0.8rem; font-weight: 500;">PREDICTION RUN AT (IST)</span><br>
@@ -397,13 +411,30 @@ with tab_live:
         st.markdown("---")
 
         # -------------------------------------------------
-        # SHAP EXPLAINABILITY SECTION
+        # 💡 WHY THIS PREDICTION? (TASK 1: PLAIN-ENGLISH SHAP)
         # -------------------------------------------------
-        st.subheader(f"🔍 Top Feature Drivers (SHAP Explainability) — {symbol}")
-        st.caption(
-            f"SHAP TreeExplainer breakdown illustrating how each technical indicator pushes the model "
-            f"toward or against predicted direction **{direction}** ({confidence:.1f}% confidence)."
-        )
+        st.subheader(f"💡 Why this prediction? — {symbol}")
+        st.caption("Explanations show what the model used, not whether it is right.")
+
+        FEATURE_LABEL_MAP = {
+            "vol_10": "Recent price swings (10h)",
+            "ret_1": "Price change, last hour",
+            "ret_3": "Price change, last 3 hours",
+            "ret_5": "Price change, last 5 hours",
+            "ret_10": "Price change, last 10 hours",
+            "ret_lag_1": "Price change 1 hour ago",
+            "ret_lag_2": "Price change 2 hours ago",
+            "ret_lag_3": "Price change 3 hours ago",
+            "ret_lag_5": "Price change 5 hours ago",
+            "vol_change": "Change in trading activity",
+            "close_vs_ma5": "Price vs 5-hour average",
+            "close_vs_ma10": "Price vs 10-hour average",
+            "close_vs_ma20": "Price vs 20-hour average",
+            "close_vs_ma30": "Price vs 30-hour average",
+            "close_vs_ma60": "Price vs 60-hour average",
+            "rsi_14": "Buying vs selling momentum",
+            "macd_hist": "Trend strength",
+        }
 
         try:
             from app.services.explainer import explain_latest_prediction
@@ -437,67 +468,144 @@ with tab_live:
                         return f"{v:+.3f}"
                     return f"{v:.4g}"
 
-                exp_col1, exp_col2 = st.columns([3, 2])
+                def generate_plain_reason(top_d: dict, p_class: str) -> str:
+                    f_name = top_d.get("feature", "")
+                    val = top_d.get("feature_value", 0.0)
+                    if f_name == "vol_10":
+                        if val < 0.002:
+                            return "price swings have been very small recently, so a large move looks unlikely"
+                        else:
+                            return "recent price volatility is elevated, indicating active swings"
+                    elif f_name == "ret_1":
+                        if abs(val) < 0.0005:
+                            return "price stayed virtually flat over the last hour"
+                        elif val > 0:
+                            return f"price rose {val*100:+.2f}% in the last hour"
+                        else:
+                            return f"price fell {val*100:+.2f}% in the last hour"
+                    elif f_name in ("ret_3", "ret_5", "ret_10"):
+                        hrs = f_name.split("_")[1]
+                        if abs(val) < 0.001:
+                            return f"price movement over the last {hrs} hours has been muted"
+                        else:
+                            return f"price changed by {val*100:+.2f}% over the last {hrs} hours"
+                    elif f_name.startswith("ret_lag_"):
+                        lag = f_name.split("_")[2]
+                        return f"price movement from {lag} hours ago ({val*100:+.2f}%) set a directional drift"
+                    elif f_name.startswith("close_vs_ma"):
+                        ma_win = f_name.replace("close_vs_ma", "")
+                        if abs(val) < 0.001:
+                            return f"price is tracking right along its {ma_win}-hour moving average"
+                        elif val > 0:
+                            return f"price is holding {val*100:+.2f}% above its {ma_win}-hour average"
+                        else:
+                            return f"price is lagging {val*100:+.2f}% below its {ma_win}-hour average"
+                    elif f_name == "rsi_14":
+                        if val > 65:
+                            return f"buying momentum is elevated (RSI {val:.1f})"
+                        elif val < 35:
+                            return f"selling momentum has been dominant (RSI {val:.1f})"
+                        else:
+                            return f"buying and selling pressure are currently balanced (RSI {val:.1f})"
+                    elif f_name == "macd_hist":
+                        if val > 0:
+                            return "short-term trend momentum is positive"
+                        elif val < 0:
+                            return "short-term trend momentum is leaning negative"
+                        else:
+                            return "trend indicators show consolidation"
+                    elif f_name == "vol_change":
+                        if val > 0.1:
+                            return "trading activity expanded compared to previous hours"
+                        elif val < -0.1:
+                            return "trading activity contracted compared to previous hours"
+                        else:
+                            return "trading volume is stable"
+                    return f"{FEATURE_LABEL_MAP.get(f_name, f_name)} is the primary driver"
 
-                with exp_col1:
-                    chart_rows = []
-                    for d in top_drivers:
-                        chart_rows.append({
-                            "Feature": d["feature"],
-                            "SHAP Value": d["shap_value"],
-                            "Value": d["feature_value"],
-                            "DisplayVal": format_feature_val(d["feature"], d["feature_value"]),
-                        })
-                    ch_df = pd.DataFrame(chart_rows)
+                # 1. Plain-English summary sentence above the chart
+                top_reason = generate_plain_reason(top_drivers[0], pred_cls) if top_drivers else "indicator signals are balanced"
+                st.markdown(
+                    f"""
+                    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 18px; margin: 10px 0 16px 0; font-size: 1.05rem;">
+                        <strong>{pred_cls}</strong> ({confidence:.0f}% confident). 
+                        <span style="color: #8b949e;">Main reason:</span> <span style="color: #f0f6fc;">{top_reason}.</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-                    # Dark-themed matplotlib chart
-                    import matplotlib
-                    matplotlib.use("Agg")
-                    import matplotlib.pyplot as plt
+                # 2. Detailed technical chart and cards inside an expander
+                with st.expander("See technical details", expanded=False):
+                    exp_col1, exp_col2 = st.columns([3, 2])
 
-                    plt.style.use("dark_background")
-                    fig, ax = plt.subplots(figsize=(6.8, 3.2), facecolor="#0e1117")
-                    ax.set_facecolor("#0e1117")
+                    with exp_col1:
+                        chart_rows = []
+                        for d in top_drivers:
+                            f_raw = d["feature"]
+                            f_label = FEATURE_LABEL_MAP.get(f_raw, f_raw)
+                            chart_rows.append({
+                                "Feature": f_label,
+                                "RawFeature": f_raw,
+                                "SHAP Value": d["shap_value"],
+                                "Value": d["feature_value"],
+                                "DisplayVal": format_feature_val(f_raw, d["feature_value"]),
+                            })
+                        ch_df = pd.DataFrame(chart_rows)
 
-                    colors = ["#2ea043" if v > 0 else "#f85149" for v in ch_df["SHAP Value"]]
-                    y_pos = range(len(ch_df))
-                    ax.barh(y_pos, ch_df["SHAP Value"], color=colors, height=0.6, align="center")
-                    ax.set_yticks(y_pos)
-                    ax.set_yticklabels(
-                        [f"{r['Feature']} ({r['DisplayVal']})" for _, r in ch_df.iterrows()],
-                        fontsize=9,
-                        color="#c9d1d9"
-                    )
-                    ax.axvline(0, color="#484f58", linestyle="--", linewidth=1.0)
-                    ax.set_xlabel(f"SHAP Impact toward {pred_cls}", fontsize=9, color="#8b949e")
-                    ax.tick_params(axis="x", colors="#8b949e", labelsize=8)
-                    ax.spines["top"].set_visible(False)
-                    ax.spines["right"].set_visible(False)
-                    ax.spines["left"].set_color("#30363d")
-                    ax.spines["bottom"].set_color("#30363d")
-                    ax.invert_yaxis()
-                    fig.tight_layout()
-                    st.pyplot(fig)
-                    plt.close(fig)
+                        # Dark-themed matplotlib chart
+                        import matplotlib
+                        matplotlib.use("Agg")
+                        import matplotlib.pyplot as plt
 
-                with exp_col2:
-                    st.markdown(f"**Impact Breakdown on `{pred_cls}`:**")
-                    for d in top_drivers:
-                        is_pos = d["shap_value"] > 0
-                        icon = "🟢 ⬆️" if is_pos else "🔴 ⬇️"
-                        push_action = "toward" if is_pos else "against"
-                        d_val_str = format_feature_val(d["feature"], d["feature_value"])
-                        st.markdown(
-                            f"""
-                            <div style="background: #161b22; border-left: 3px solid {'#2ea043' if is_pos else '#f85149'}; padding: 6px 12px; margin-bottom: 6px; border-radius: 4px;">
-                                <span style="font-size: 0.88rem; font-weight: 600; color: #f0f6fc;">{icon} <code>{d['feature']}</code></span>
-                                <span style="font-size: 0.8rem; color: #8b949e; margin-left: 6px;">(val: <strong>{d_val_str}</strong>)</span><br>
-                                <span style="font-size: 0.82rem; color: {'#3fb950' if is_pos else '#f85149'}; font-weight: 600;">{d['shap_value']:+.4f}</span>
-                                <span style="font-size: 0.8rem; color: #8b949e;"> — pushes <strong>{push_action}</strong> {pred_cls}</span>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
+                        plt.style.use("dark_background")
+                        fig, ax = plt.subplots(figsize=(6.8, 3.2), facecolor="#0e1117")
+                        ax.set_facecolor("#0e1117")
+
+                        colors = ["#2ea043" if v > 0 else "#f85149" for v in ch_df["SHAP Value"]]
+                        y_pos = range(len(ch_df))
+                        ax.barh(y_pos, ch_df["SHAP Value"], color=colors, height=0.6, align="center")
+                        ax.set_yticks(y_pos)
+                        ax.set_yticklabels(
+                            [f"{r['Feature']} ({r['DisplayVal']})" for _, r in ch_df.iterrows()],
+                            fontsize=8.5,
+                            color="#c9d1d9"
                         )
+                        ax.axvline(0, color="#484f58", linestyle="--", linewidth=1.0)
+                        ax.set_xlabel(f"SHAP Impact toward {pred_cls}", fontsize=9, color="#8b949e")
+                        ax.tick_params(axis="x", colors="#8b949e", labelsize=8)
+                        ax.spines["top"].set_visible(False)
+                        ax.spines["right"].set_visible(False)
+                        ax.spines["left"].set_color("#30363d")
+                        ax.spines["bottom"].set_color("#30363d")
+                        ax.invert_yaxis()
+                        fig.tight_layout()
+                        st.pyplot(fig)
+                        plt.close(fig)
+
+                    with exp_col2:
+                        st.markdown(f"**Impact Breakdown on `{pred_cls}`:**")
+                        for d in top_drivers:
+                            f_raw = d["feature"]
+                            f_label = FEATURE_LABEL_MAP.get(f_raw, f_raw)
+                            is_pos = d["shap_value"] > 0
+                            icon = "🟢 ⬆️" if is_pos else "🔴 ⬇️"
+                            push_action = "toward" if is_pos else "against"
+                            d_val_str = format_feature_val(f_raw, d["feature_value"])
+                            st.markdown(
+                                f"""
+                                <div style="background: #161b22; border-left: 3px solid {'#2ea043' if is_pos else '#f85149'}; padding: 6px 12px; margin-bottom: 6px; border-radius: 4px;">
+                                    <span style="font-size: 0.88rem; font-weight: 600; color: #f0f6fc;">{icon} {f_label}</span>
+                                    <span style="font-size: 0.78rem; color: #8b949e; margin-left: 4px;">(<code>{f_raw}</code>: <strong>{d_val_str}</strong>)</span><br>
+                                    <span style="font-size: 0.82rem; color: {'#3fb950' if is_pos else '#f85149'}; font-weight: 600;">{d['shap_value']:+.4f}</span>
+                                    <span style="font-size: 0.8rem; color: #8b949e;"> — pushes <strong>{push_action}</strong> {pred_cls}</span>
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+
+        except Exception as exc:
+            st.warning(f"SHAP explanation unavailable: {exc}")
 
         except Exception as exc:
             st.warning(f"SHAP explanation unavailable: {exc}")

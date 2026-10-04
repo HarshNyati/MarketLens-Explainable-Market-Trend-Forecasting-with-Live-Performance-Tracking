@@ -14,9 +14,9 @@ logging.basicConfig(
 )
 
 app = FastAPI(
-    title="Market Trend Analysis API",
+    title="MarketLens API",
     version="1.0.0",
-    description="FastAPI backend for market-trend predictions (crypto + stocks).",
+    description="FastAPI backend for MarketLens: Explainable Market Trend Forecasting with Live Performance Tracking.",
 )
 
 
@@ -30,7 +30,7 @@ def startup_event() -> None:
 @app.get("/health", tags=["ops"])
 def health() -> dict:
     """Lightweight liveness probe used by Docker / load-balancers."""
-    return {"status": "ok", "service": "market-trend-api"}
+    return {"status": "ok", "service": "marketlens-api"}
 
 
 # ─── Domain routers ──────────────────────────────────────────────────────────

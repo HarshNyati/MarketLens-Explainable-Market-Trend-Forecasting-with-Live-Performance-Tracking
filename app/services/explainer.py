@@ -116,7 +116,7 @@ def explain_latest_prediction(symbol: str, top_k: int = 5) -> dict[str, Any]:
     sym = symbol.strip().upper()
 
     # 1. Run / load live prediction to get the predicted class and timestamp
-    pred = predict_symbol(sym)
+    pred = predict_symbol(sym, force=True)
     if "error" in pred:
         return {"error": pred["error"]}
 

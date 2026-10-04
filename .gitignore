@@ -46,6 +46,9 @@ logs/
 .ipynb_checkpoints/
 */.ipynb_checkpoints/*
 
-# Datasets (large CSV files)
-ml/datasets/*.csv
+# macOS artifacts
+__MACOSX/
+
+# Datasets (downloaded or raw)
+ml/datasets/
 data/*.csv

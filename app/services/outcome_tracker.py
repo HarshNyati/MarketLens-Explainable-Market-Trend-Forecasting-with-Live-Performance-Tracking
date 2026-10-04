@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import numpy as np
 from app.database import get_db_connection
 
 logger = logging.getLogger(__name__)
@@ -91,7 +92,7 @@ def resolve_outcomes(
 
         p0 = float(row_p0[0])
 
-        # 2. Check if at least `horizon_bars` have elapsed after candle_ts
+        # 2. Fetch the next `horizon_bars` prices to evaluate the full forward horizon
         cur.execute(
             """
             SELECT price, recorded_at
@@ -99,29 +100,34 @@ def resolve_outcomes(
             WHERE symbol = %s
               AND recorded_at > %s
             ORDER BY recorded_at ASC
-            OFFSET %s
-            LIMIT 1;
+            LIMIT %s;
             """,
-            (symbol, candle_ts, horizon_bars - 1),
+            (symbol, candle_ts, horizon_bars),
         )
-        row_pn = cur.fetchone()
+        subsequent_rows = cur.fetchall()
 
-        if not row_pn:
+        if len(subsequent_rows) < horizon_bars:
             # Horizon has not elapsed yet; keep nullable
             continue
 
-        p_horizon = float(row_pn[0])
-        horizon_ts = row_pn[1]
+        future_prices = [float(r[0]) for r in subsequent_rows]
+        horizon_ts = subsequent_rows[-1][1]
+        p_horizon = future_prices[-1]
 
-        # 3. Calculate actual return and label
-        actual_return = (p_horizon - p0) / p0 if p0 > 0 else 0.0
+        # 3. Calculate actual return and label matching make_target() in ml/feature_engineering.py
+        max_ret = float(np.max(future_prices) / p0 - 1) if p0 > 0 else 0.0
+        min_ret = float(np.min(future_prices) / p0 - 1) if p0 > 0 else 0.0
+        end_ret = float((p_horizon - p0) / p0) if p0 > 0 else 0.0
 
-        if actual_return > up_thresh:
+        if max_ret >= up_thresh and abs(max_ret) >= abs(min_ret):
             actual_label = "UP"
-        elif actual_return < -dn_thresh:
+            actual_return = max_ret
+        elif min_ret <= -dn_thresh and abs(min_ret) > abs(max_ret):
             actual_label = "DOWN"
+            actual_return = min_ret
         else:
             actual_label = "NEUTRAL"
+            actual_return = end_ret
 
         was_correct = bool(str(direction).strip().upper() == actual_label)
 
@@ -258,3 +264,87 @@ def get_live_performance(symbol: str) -> dict[str, Any]:
         if has_enough_data
         else f"Not enough data yet ({resolved_count}/{MIN_RESOLVED_THRESHOLD} resolved)",
     }
+
+
+def recompute_stored_outcomes(
+    horizon_bars: int = HORIZON_BARS,
+    up_thresh: float = UP_THRESH,
+    dn_thresh: float = DN_THRESH,
+) -> int:
+    """Recompute all stored outcomes in prediction_results to match make_target() logic.
+
+    Never modifies original prediction, direction, or confidence.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    query = """
+        SELECT id, symbol, direction, candle_timestamp
+        FROM prediction_results
+        WHERE candle_timestamp IS NOT NULL
+        ORDER BY candle_timestamp ASC;
+    """
+    cur.execute(query)
+    all_preds = cur.fetchall()
+
+    updated_count = 0
+    for pred_id, symbol, direction, candle_ts in all_preds:
+        cur.execute(
+            """
+            SELECT price FROM market_data
+            WHERE symbol = %s AND recorded_at = %s LIMIT 1;
+            """,
+            (symbol, candle_ts),
+        )
+        row_p0 = cur.fetchone()
+        if not row_p0:
+            continue
+        p0 = float(row_p0[0])
+
+        cur.execute(
+            """
+            SELECT price FROM market_data
+            WHERE symbol = %s AND recorded_at > %s
+            ORDER BY recorded_at ASC LIMIT %s;
+            """,
+            (symbol, candle_ts, horizon_bars),
+        )
+        sub_rows = cur.fetchall()
+        if len(sub_rows) < horizon_bars:
+            continue
+
+        future_prices = [float(r[0]) for r in sub_rows]
+        max_ret = float(np.max(future_prices) / p0 - 1) if p0 > 0 else 0.0
+        min_ret = float(np.min(future_prices) / p0 - 1) if p0 > 0 else 0.0
+        end_ret = float((future_prices[-1] - p0) / p0) if p0 > 0 else 0.0
+
+        if max_ret >= up_thresh and abs(max_ret) >= abs(min_ret):
+            actual_label = "UP"
+            actual_return = max_ret
+        elif min_ret <= -dn_thresh and abs(min_ret) > abs(max_ret):
+            actual_label = "DOWN"
+            actual_return = min_ret
+        else:
+            actual_label = "NEUTRAL"
+            actual_return = end_ret
+
+        was_correct = bool(str(direction).strip().upper() == actual_label)
+
+        cur.execute(
+            """
+            UPDATE prediction_results
+            SET actual_return = %s,
+                actual_label = %s,
+                was_correct = %s
+            WHERE id = %s;
+            """,
+            (round(actual_return, 6), actual_label, was_correct, pred_id),
+        )
+        updated_count += 1
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    logger.info("Recomputed %d stored outcomes matching make_target() logic", updated_count)
+    return updated_count
+

@@ -104,12 +104,8 @@ HORIZON   = DEFAULT_HORIZON    # 5 bars look-ahead
 UP_THRESH = DEFAULT_UP_THRESH  # 0.5 %
 DN_THRESH = DEFAULT_DN_THRESH  # 0.5 %
 
-# ── CSV fallbacks (used only if yfinance download fails) ──────────────────────
-ASSETS: dict[str, str] = {
-    "BITCOIN":  "ml/datasets/btc_historical.csv",
-    "ETHEREUM": "ml/datasets/eth_historical.csv",
-    "IBM":      "ml/datasets/ibm_historical.csv",
-}
+# ── Tracked assets ────────────────────────────────────────────────────────────
+ASSETS: list[str] = ["BITCOIN", "ETHEREUM", "IBM"]
 
 N_SPLITS          = 5         # TimeSeriesSplit folds
 FEE_ROUNDTRIP     = 0.001     # 0.1 % per completed round-trip trade
@@ -325,10 +321,7 @@ def _backtest(
 # Per-asset training loop
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _train_asset(
-    symbol: str,
-    csv_path: str,
-) -> tuple[dict, dict]:
+def _train_asset(symbol: str) -> tuple[dict, dict]:
     """Walk-forward training + evaluation for one asset.
 
     Returns
@@ -340,21 +333,12 @@ def _train_asset(
     print(f"  {symbol}  (interval={CANDLE_INTERVAL})")
     print(f"{'═'*60}")
 
-    # ── 1. Load data: try yfinance first, fall back to CSV ────────────────────
+    # ── 1. Load data via yfinance ─────────────────────────────────────────────
     raw = fetch_candles(symbol, interval=CANDLE_INTERVAL)
 
     if raw.empty:
-        path = Path(csv_path)
-        if not path.exists():
-            print(f"  ⚠  yfinance download failed and {csv_path} not found – skipping.")
-            return {}, {}
-        print(f"  ⚠  yfinance failed; falling back to CSV: {csv_path}")
-        raw = pd.read_csv(path)
-        # Normalise CSV column conventions
-        for src, dst in [("close", "Close"), ("Price", "Close"), ("Value", "Close"),
-                         ("volume", "Volume")]:
-            if src in raw.columns and dst not in raw.columns:
-                raw.rename(columns={src: dst}, inplace=True)
+        print(f"  ⚠  yfinance download returned no data for {symbol} – skipping.")
+        return {}, {}
     else:
         print(f"  ✅ Downloaded {len(raw):,} candles from yfinance")
 
@@ -596,8 +580,8 @@ def main() -> None:
     all_metrics:  dict[str, dict] = {}
     all_backtests: dict[str, dict] = {}
 
-    for symbol, csv_path in ASSETS.items():
-        m, bt = _train_asset(symbol, csv_path)
+    for symbol in ASSETS:
+        m, bt = _train_asset(symbol)
         if m:
             all_metrics[symbol]   = m
             all_backtests[symbol] = bt

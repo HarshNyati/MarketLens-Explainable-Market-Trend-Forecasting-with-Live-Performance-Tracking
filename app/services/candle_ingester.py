@@ -17,10 +17,9 @@ from __future__ import annotations
 
 import logging
 import pandas as pd
-from datetime import timezone
 
 from app.database import get_db_connection
-from ml.market_data_fetcher import DEFAULT_INTERVAL, fetch_candles, fetch_recent_candles
+from ml.market_data_fetcher import DEFAULT_INTERVAL, fetch_recent_candles
 
 logger = logging.getLogger(__name__)
 

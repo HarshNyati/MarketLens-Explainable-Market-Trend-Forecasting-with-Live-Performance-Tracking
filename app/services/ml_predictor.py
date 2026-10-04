@@ -56,8 +56,42 @@ def _load_meta(symbol: str) -> dict:
     }
 
 
-def predict_symbol(symbol: str) -> dict:
+def is_us_equity_market_open(dt: datetime | None = None) -> bool:
+    """Return True if US equity markets are open (Mon-Fri 09:30 - 16:00 US/Eastern)."""
+    from zoneinfo import ZoneInfo
+    if dt is None:
+        dt = datetime.now(timezone.utc)
+    try:
+        et = dt.astimezone(ZoneInfo("America/New_York"))
+    except Exception:
+        if dt.weekday() >= 5:
+            return False
+        return (dt.hour == 13 and dt.minute >= 30) or (14 <= dt.hour < 20) or (dt.hour == 20 and dt.minute == 0)
+
+    if et.weekday() >= 5:
+        return False
+    market_open = et.replace(hour=9, minute=30, second=0, microsecond=0)
+    market_close = et.replace(hour=16, minute=0, second=0, microsecond=0)
+    return market_open <= et <= market_close
+
+
+def predict_symbol(symbol: str, force: bool = False) -> dict:
     symbol = symbol.upper()
+
+    # Skip IBM if US equity market is closed (unless forced)
+    if symbol == "IBM" and not force and not is_us_equity_market_open():
+        logger.info("Skipping IBM prediction: US stock market is closed.")
+        return {
+            "symbol": "IBM",
+            "status": "market_closed",
+            "message": "US Stock Market is currently closed. Predictions are skipped outside trading hours.",
+            "direction": "NO_SIGNAL",
+            "raw_direction": "NO_SIGNAL",
+            "confidence": 0.0,
+            "is_signal": False,
+            "candle_timestamp": None,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
 
     # ── 1. Load model ─────────────────────────────────────────────────────────
     model_path = MODELS_DIR / f"{symbol.lower()}_model.pkl"
