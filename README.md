@@ -178,7 +178,8 @@ Every evaluation claim matches the pipeline implementation in [`ml/train_offline
 ```
 ├── Dockerfile                  # Multi-target build (FastAPI API and Streamlit Dashboard)
 ├── docker-compose.yml          # Container orchestration (postgres, api, dashboard)
-├── requirements.txt            # Python dependencies (pinned versions)
+├── requirements.txt            # Production dependencies (pinned exact versions)
+├── requirements-dev.txt        # Development and testing dependencies (pytest)
 ├── pytest.ini                  # Pytest configuration
 ├── schema.sql                  # PostgreSQL database DDL
 ├── LICENSE                     # MIT License

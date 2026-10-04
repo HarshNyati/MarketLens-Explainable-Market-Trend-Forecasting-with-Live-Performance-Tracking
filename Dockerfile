@@ -27,8 +27,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy and install Python deps first (better layer caching)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements-dev.txt ./
+ARG INSTALL_DEV=true
+RUN pip install --no-cache-dir -r requirements.txt \
+    && if [ "$INSTALL_DEV" = "true" ]; then pip install --no-cache-dir -r requirements-dev.txt; fi
 
 # Copy the full project
 COPY . .
